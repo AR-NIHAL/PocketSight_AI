@@ -10,7 +10,7 @@ import '../../domain/entities/detection_image_format.dart';
 abstract final class CameraImageConverter {
   /// Maps a [CameraImage] to a [DetectionImage].
   ///
-  /// Android `yuv420` frames are converted to NV21 (single buffer, reliably
+  /// Android `yuv420` frames are converted to a single NV21 buffer (reliably
   /// accepted by ML Kit); iOS `bgra8888` frames are passed through as-is.
   static DetectionImage toDetectionImage(CameraImage image, int rotationDegrees) {
     final format = _mapFormat(image.format.group);
@@ -32,7 +32,9 @@ abstract final class CameraImageConverter {
 
   static DetectionImageFormat _mapFormat(ImageFormatGroup group) {
     return switch (group) {
-      ImageFormatGroup.yuv420 => DetectionImageFormat.yuv420,
+      // yuv420 arrives as three planes; the merge below produces a single
+      // NV21 buffer, so label it as such.
+      ImageFormatGroup.yuv420 => DetectionImageFormat.nv21,
       ImageFormatGroup.nv21 => DetectionImageFormat.nv21,
       ImageFormatGroup.jpeg => DetectionImageFormat.jpeg,
       ImageFormatGroup.bgra8888 => DetectionImageFormat.bgra8888,

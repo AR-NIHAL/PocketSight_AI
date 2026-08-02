@@ -145,12 +145,18 @@ lib/
   - `presentation/widgets/bounding_box_painter.dart` + rewritten `scanner_screen.dart` (live `CameraPreview` + overlay, error/retry view).
 - **Verified:** `flutter analyze` clean; 41/41 tests pass (new: NV21 merge x2, ML Kit repo mapping/threshold/label/rotation/format/dispose, scanner widget tests via mocked camera channel); `flutter build apk --debug` succeeds.
 
-### Phase 3 — Tap-to-Inspect & Local Tagging
+### Phase 3 — Tap-to-Inspect & Local Tagging ✅
 - Tap hit-testing on bounding boxes → freeze/highlight target.
 - Bottom-sheet form: title, category, Markdown notes, inspection schedule.
 - Crop bounding-box region (`image`), save local thumbnail via data layer.
 - Persist `InspectionItem` through `InventoryRepository`.
 - **Exit criteria:** tap box → fill form → item saved with cropped thumbnail.
+- **Delivered:**
+  - `scanner/domain`: `NormalizedRect.contains(x, y)` hit-test helper.
+  - `scanner/data`: `ThumbnailCropper` (pure NV21→BGRA→upright via BT.601, square crop to 160px, JPEG encode) + `ThumbnailDatasource` (writes `<docs>/thumbnails/<uuid>.jpg` via `path_provider`); `camera_image_converter` merged-NV21 frames now labeled `nv21` (was mislabeled `yuv420`, breaking ML Kit 3-plane parsing).
+  - `scanner/presentation`: `ScannerState.scannerFocused` (frozen frame + selected box); `ScannerController.select`/`dismissSelection`/`saveSelected`; `BoundingBoxPainter` highlight (yellow, translucent fill); `InspectionFormSheet` (title, category dropdown, Markdown notes, schedule switch + date picker); `ScannerScreen` tap hit-testing → freeze → form → save.
+  - `inventory/data`: `InMemoryInventoryRepository` (watch/save/delete/search/export/import) + `inventoryRepositoryProvider`; **Hive wiring deferred to Phase 4** (data resets on restart).
+- **Verified:** 55/55 tests pass (added cropper, in-memory repo, `contains` cases); `flutter analyze` clean; debug APK builds.
 
 ### Phase 4 — Inventory
 - Hive box wiring (`hive_ce`), `HiveInventoryRepository` + model mappers.

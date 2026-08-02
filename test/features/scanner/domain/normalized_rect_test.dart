@@ -29,5 +29,24 @@ void main() {
       expect(rect.copyWith(right: 0.9), isNot(rect));
       expect(const NormalizedRect(left: 0.1, top: 0.2, right: 0.3, bottom: 0.4), rect);
     });
+
+    group('contains', () {
+      const rect = NormalizedRect(left: 0.2, top: 0.3, right: 0.6, bottom: 0.8);
+
+      test('returns true inside the box', () {
+        expect(rect.contains(0.4, 0.5), isTrue);
+      });
+
+      test('includes the edges', () {
+        expect(rect.contains(0.2, 0.3), isTrue);
+        expect(rect.contains(0.6, 0.8), isTrue);
+      });
+
+      test('returns false outside the box', () {
+        expect(rect.contains(0.1, 0.5), isFalse);
+        expect(rect.contains(0.4, 0.9), isFalse);
+        expect(rect.contains(0.7, 0.2), isFalse);
+      });
+    });
   });
 }

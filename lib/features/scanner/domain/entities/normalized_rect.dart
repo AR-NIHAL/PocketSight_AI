@@ -24,4 +24,8 @@ abstract class NormalizedRect with _$NormalizedRect {
       bottom <= 1 &&
       right > left &&
       bottom > top;
+
+  /// Whether the normalized point ([x], [y]) falls inside this box.
+  bool contains(double x, double y) =>
+      x >= left && x <= right && y >= top && y <= bottom;
 }
