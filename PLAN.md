@@ -130,12 +130,20 @@ lib/
   - **Note:** item persistence use cases live in `inventory/domain` (single owner); `inspection/` UI orchestration and thumbnail cropping land in Phase 3 (cropping needs the `image` package, so it stays out of the pure-Dart domain).
 - **Verified:** 32/32 tests pass; purity scan shows no Flutter/Riverpod/platform imports in `domain/`; `flutter analyze` clean.
 
-### Phase 2 — Scanner (Camera + ML Pipeline)
+### Phase 2 — Scanner (Camera + ML Pipeline) ✅
 - `camera` datasource (`startImageStream`), frame throttling to **10–15 FPS**.
 - `google_mlkit_object_detection` datasource (bundled model, classification enabled).
 - `ScannerController` notifier orchestrating frames → detections.
 - `CameraFeedScreen` + `BoundingBoxPainter` overlay drawing live boxes.
 - **Exit criteria:** live bounding boxes over camera preview on device/emulator.
+- **Delivered:**
+  - `data/datasources/camera_image_converter.dart`: `yuv420` → NV21 single-buffer merge (row-stride padding + chroma pixel strides handled), `bgra8888` passthrough.
+  - `data/datasources/camera_datasource.dart`: `availableCameras()` + back-camera select, `startImageStream`, Stopwatch throttle to `targetFps`, rotation handling.
+  - `data/repositories/mlkit_object_detection_repository.dart`: `InputImage.fromBytes` (rotation/bytesPerRow metadata), confidence threshold filter, top-label selection, `NormalizedRect` mapping (90/270 rotation-aware), `InputImage` rotation lookup.
+  - `data/providers.dart`: keepAlive `cameraDatasourceProvider` + `objectDetectionRepositoryProvider`.
+  - `presentation/notifiers/scanner_state.dart` (Idle/Initializing/Error/Ready) + `scanner_controller.dart` (`@riverpod`, stale-frame guard, dispose cleanup).
+  - `presentation/widgets/bounding_box_painter.dart` + rewritten `scanner_screen.dart` (live `CameraPreview` + overlay, error/retry view).
+- **Verified:** `flutter analyze` clean; 41/41 tests pass (new: NV21 merge x2, ML Kit repo mapping/threshold/label/rotation/format/dispose, scanner widget tests via mocked camera channel); `flutter build apk --debug` succeeds.
 
 ### Phase 3 — Tap-to-Inspect & Local Tagging
 - Tap hit-testing on bounding boxes → freeze/highlight target.
@@ -176,7 +184,7 @@ lib/
 |---|---|---|---|
 | 0 | Scaffold & Foundation | ✅ Done | 2026-08-02 |
 | 1 | Domain Layer | ✅ Done | 2026-08-02 |
-| 2 | Scanner (Camera + ML) | ⬜ Pending | — |
+| 2 | Scanner (Camera + ML) | ✅ Done | 2026-08-02 |
 | 3 | Tap-to-Inspect & Tagging | ⬜ Pending | — |
 | 4 | Inventory | ⬜ Pending | — |
 | 5 | Settings | ⬜ Pending | — |

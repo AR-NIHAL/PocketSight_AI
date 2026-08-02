@@ -409,7 +409,7 @@ packages:
     source: hosted
     version: "17.3.0"
   google_mlkit_commons:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: google_mlkit_commons
       sha256: c7fc384bdb66c3b83e24e3a41818e61d7a378d900f65f5e775344fbca95a0917

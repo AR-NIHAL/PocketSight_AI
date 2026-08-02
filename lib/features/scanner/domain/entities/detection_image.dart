@@ -17,6 +17,8 @@ abstract class DetectionImage with _$DetectionImage {
     required int width,
     required int height,
     @Default(DetectionImageFormat.yuv420) DetectionImageFormat format,
+    @Default(0) int rotationDegrees,
+    int? bytesPerRow,
   }) = _DetectionImage;
 
   const DetectionImage._();
