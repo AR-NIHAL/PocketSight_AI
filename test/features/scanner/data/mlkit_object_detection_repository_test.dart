@@ -166,6 +166,30 @@ void main() {
       ));
     });
 
+    test('setConfidenceThreshold changes the active threshold live', () async {
+      when(() => detector.processImage(any())).thenAnswer(
+        (_) async => [
+          ml.DetectedObject(
+            boundingBox: const Rect.fromLTWH(0, 0, 50, 100),
+            trackingId: null,
+            labels: [
+              ml.Label(index: 0, text: 'plant', confidence: 0.4),
+            ],
+          ),
+        ],
+      );
+
+      // 0.4 confidence is filtered at the default 0.5 threshold...
+      expect(await repository.detect(image()), isEmpty);
+
+      // ...but kept after lowering it while the engine is in use.
+      repository.setConfidenceThreshold(0.3);
+      final results = await repository.detect(image());
+
+      expect(results, hasLength(1));
+      expect(results.single.confidence, 0.4);
+    });
+
     test('throws for unsupported image formats', () async {
       final input = image(format: DetectionImageFormat.jpeg);
 

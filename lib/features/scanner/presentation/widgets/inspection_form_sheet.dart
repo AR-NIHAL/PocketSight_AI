@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../../../inventory/domain/entities/inspection_item.dart';
 import '../../../inventory/domain/entities/inspection_schedule.dart';
 import '../../domain/entities/detected_object.dart';
 
-/// Bottom-sheet form for tagging a frozen detection into the inventory.
+/// Bottom-sheet form for tagging a detection into the inventory, or for
+/// editing an existing [InspectionItem].
+///
+/// Pops a `Map<String, dynamic>` with `title`, `category`, `markdownNotes`
+/// and `schedule` when the user confirms. Pass either [detection] (new tag)
+/// or [initial] (edit) — not both.
 class InspectionFormSheet extends StatefulWidget {
-  const InspectionFormSheet({super.key, required this.detection});
+  const InspectionFormSheet({super.key, this.detection, this.initial})
+      : assert(detection != null || initial != null,
+            'Either detection or initial must be provided');
 
-  final DetectedObject detection;
+  final DetectedObject? detection;
+  final InspectionItem? initial;
 
   @override
   State<InspectionFormSheet> createState() => _InspectionFormSheetState();
@@ -28,16 +37,30 @@ class _InspectionFormSheetState extends State<InspectionFormSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _notesController;
   late final TextEditingController _scheduleNoteController;
-  String _category = _categories.first;
-  bool _enableSchedule = false;
-  DateTime _dueDate = DateTime.now().add(const Duration(days: 7));
+  late String _category;
+  late bool _enableSchedule;
+  late DateTime _dueDate;
+
+  bool get _isEditing => widget.initial != null;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.detection.label);
-    _notesController = TextEditingController();
-    _scheduleNoteController = TextEditingController();
+    final initial = widget.initial;
+    final detection = widget.detection;
+    _titleController = TextEditingController(
+      text: initial?.title ?? detection?.label ?? '',
+    );
+    _notesController = TextEditingController(
+      text: initial?.markdownNotes ?? '',
+    );
+    _scheduleNoteController = TextEditingController(
+      text: initial?.schedule?.note ?? '',
+    );
+    _category = initial?.category ?? _categories.first;
+    _enableSchedule = initial?.schedule != null;
+    _dueDate =
+        initial?.schedule?.nextDueDate ?? DateTime.now().add(const Duration(days: 7));
   }
 
   @override
@@ -83,6 +106,8 @@ class _InspectionFormSheetState extends State<InspectionFormSheet> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final detection = widget.detection;
+    final initial = widget.initial;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -98,13 +123,20 @@ class _InspectionFormSheetState extends State<InspectionFormSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Tag detection', style: textTheme.titleLarge),
+                Text(_isEditing ? 'Edit item' : 'Tag detection',
+                    style: textTheme.titleLarge),
                 const SizedBox(height: 4),
-                Text(
-                  '${widget.detection.label} · '
-                  '${(widget.detection.confidence * 100).round()}% confidence',
-                  style: textTheme.bodySmall,
-                ),
+                if (_isEditing)
+                  Text(
+                    'Category: ${initial!.category}',
+                    style: textTheme.bodySmall,
+                  )
+                else if (detection != null)
+                  Text(
+                    '${detection.label} · '
+                    '${(detection.confidence * 100).round()}% confidence',
+                    style: textTheme.bodySmall,
+                  ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _titleController,
@@ -175,7 +207,7 @@ class _InspectionFormSheetState extends State<InspectionFormSheet> {
                 FilledButton.icon(
                   onPressed: _submit,
                   icon: const Icon(Icons.save_outlined),
-                  label: const Text('Save to inventory'),
+                  label: Text(_isEditing ? 'Save changes' : 'Save to inventory'),
                 ),
               ],
             ),

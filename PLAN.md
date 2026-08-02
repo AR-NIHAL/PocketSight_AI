@@ -158,18 +158,31 @@ lib/
   - `inventory/data`: `InMemoryInventoryRepository` (watch/save/delete/search/export/import) + `inventoryRepositoryProvider`; **Hive wiring deferred to Phase 4** (data resets on restart).
 - **Verified:** 55/55 tests pass (added cropper, in-memory repo, `contains` cases); `flutter analyze` clean; debug APK builds.
 
-### Phase 4 — Inventory
+### Phase 4 — Inventory ✅
 - Hive box wiring (`hive_ce`), `HiveInventoryRepository` + model mappers.
 - Gallery/List view with search + filter.
 - Item detail screen rendering Markdown notes.
 - JSON export/import backup (file_picker + share_plus).
 - **Exit criteria:** full CRUD + search/filter + working backup round-trip.
+- **Delivered:**
+  - `inventory/data`: `HiveInventoryRepository` (JSON-string values keyed by id, no custom adapter; emits current snapshot on subscribe; box opened with optional test `path`); `main.dart` calls `Hive.initFlutter()` (widget tests init Hive with a temp dir); provider now Hive-backed (`InMemoryInventoryRepository` kept for tests).
+  - `inventory/data`: `InventoryBackupService` — export writes a timestamped JSON to temp and shares it (`SharePlus.instance.share`), import picks a `.json` via `FilePicker.pickFiles` (file_picker 11 static API) and merges it.
+  - `inventory/presentation`: `inventoryItemsProvider` (reactive stream); `InventoryScreen` rewritten (search field + category `ChoiceChip` row + reactive grid, empty/no-match states, import/export AppBar actions); `InspectionItemDetailScreen` (thumbnail, category/confidence chips, overdue schedule card, `flutter_markdown_plus` notes, edit + delete).
+  - `scanner/presentation`: `InspectionFormSheet` generalized to edit mode (`initial:` prefills title/category/notes/schedule, header + save label switch).
+  - `core/router`: `/inventory/:id` route (item passed via `extra`, falls back to "Item not found").
+- **Verified:** 71/71 tests pass (hive repo, inventory screen, detail screen, widget_test now Hive-initialized); `flutter analyze` clean; debug APK builds.
 
-### Phase 5 — Settings
+### Phase 5 — Settings ✅
 - Hive-backed `InspectionSettings` + `SettingsNotifier`.
 - Confidence threshold slider + performance/FPS modes.
 - Settings wired **live** into the scanner pipeline.
 - **Exit criteria:** toggles persist and affect detection behavior.
+- **Delivered:**
+  - `settings/data`: `HiveSettingsRepository` (single JSON string under key `inspection_settings`, optional test `path`) + keepAlive `settingsRepositoryProvider`.
+  - `settings/presentation`: `SettingsController` (async notifier — loads saved settings or defaults, `setConfidenceThreshold`/`setFpsMode` update state + persist); `SettingsScreen` rebuilt with a 10–90% confidence slider + `SegmentedButton` FPS modes (10/12/15) + descriptions.
+  - `scanner` live wiring: `ObjectDetectionRepository` interface gains `setConfidenceThreshold` (implemented as a mutable threshold in `MlKitObjectDetectionRepository`); `CameraDatasource.setTargetFps` updates the throttle interval without restarting the stream; `ScannerController` applies settings via `ref.listen(settingsControllerProvider)` on load and on every change.
+  - Riverpod 3 API note: `AsyncValue.valueOrNull` is gone → `.value`.
+- **Verified:** 82/82 tests pass (hive settings repo, settings controller, settings screen widget, mlkit `setConfidenceThreshold`, widget_test now injects a fake settings repo since Hive I/O doesn't complete under `testWidgets` FakeAsync); `flutter analyze` clean; debug APK builds.
 
 ### Phase 6 — Polish, Tests & Docs
 - Widget tests, integration sanity checks.

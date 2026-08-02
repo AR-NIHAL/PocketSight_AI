@@ -7,6 +7,10 @@ abstract interface class ObjectDetectionRepository {
   /// (already filtered by the active confidence threshold).
   Future<List<DetectedObject>> detect(DetectionImage input);
 
+  /// Updates the minimum confidence required for a detection to be kept,
+  /// taking effect on subsequent [detect] calls.
+  void setConfidenceThreshold(double value);
+
   /// Releases underlying platform resources (e.g. the ML detector).
   Future<void> dispose();
 }

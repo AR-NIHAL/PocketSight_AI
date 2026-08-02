@@ -7,6 +7,8 @@ import '../../../../features/inventory/domain/entities/inspection_item.dart';
 import '../../../../features/inventory/domain/entities/inspection_schedule.dart';
 import '../../../../features/inventory/data/providers.dart' show inventoryRepositoryProvider;
 import '../../../../features/settings/domain/entities/fps_mode.dart';
+import '../../../../features/settings/domain/entities/inspection_settings.dart';
+import '../../../../features/settings/presentation/notifiers/settings_controller.dart';
 import '../../domain/entities/detected_object.dart';
 import '../../domain/entities/detection_image.dart';
 import '../../domain/repositories/object_detection_repository.dart';
@@ -27,6 +29,12 @@ class ScannerController extends _$ScannerController {
 
   @override
   ScannerState build() {
+    // Apply persisted settings to the live pipeline as soon as they load and
+    // whenever they change while the scanner is running.
+    ref.listen(settingsControllerProvider, (_, next) {
+      final settings = next.value;
+      if (settings != null) _applySettings(settings);
+    });
     ref.onDispose(() {
       _disposed = true;
       _subscription?.cancel();
@@ -34,6 +42,11 @@ class ScannerController extends _$ScannerController {
       _repository?.dispose();
     });
     return const ScannerIdle();
+  }
+
+  void _applySettings(InspectionSettings settings) {
+    _repository?.setConfidenceThreshold(settings.confidenceThreshold);
+    _datasource?.setTargetFps(settings.fpsMode.targetFps);
   }
 
   Future<void> start() async {
@@ -45,6 +58,9 @@ class ScannerController extends _$ScannerController {
 
       final repository = ref.read(objectDetectionRepositoryProvider);
       _repository = repository;
+
+      final settings = ref.read(settingsControllerProvider).value;
+      if (settings != null) _applySettings(settings);
 
       state = ScannerReady(
         controller: datasource.controller!,

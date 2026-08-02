@@ -16,21 +16,27 @@ import '../../domain/repositories/object_detection_repository.dart';
 /// object detector with category classification enabled.
 class MlKitObjectDetectionRepository implements ObjectDetectionRepository {
   MlKitObjectDetectionRepository({
-    this.confidenceThreshold = 0.5,
+    double confidenceThreshold = 0.5,
     ml.ObjectDetector? detector,
-  }) : _detector =
-           detector ??
-           ml.ObjectDetector(
-             options: ml.ObjectDetectorOptions(
-               mode: ml.DetectionMode.stream,
-               classifyObjects: true,
-               multipleObjects: true,
-             ),
-           );
+  })  : _confidenceThreshold = confidenceThreshold,
+        _detector = detector ??
+            ml.ObjectDetector(
+              options: ml.ObjectDetectorOptions(
+                mode: ml.DetectionMode.stream,
+                classifyObjects: true,
+                multipleObjects: true,
+              ),
+            );
 
   final ml.ObjectDetector _detector;
-  final double confidenceThreshold;
+  double _confidenceThreshold;
   static const _uuid = Uuid();
+
+  double get confidenceThreshold => _confidenceThreshold;
+
+  @override
+  void setConfidenceThreshold(double value) =>
+      _confidenceThreshold = value;
 
   @override
   Future<List<DetectedObject>> detect(DetectionImage input) async {

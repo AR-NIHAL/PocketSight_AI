@@ -54,6 +54,12 @@ class CameraDatasource {
     return sensorOrientation;
   }
 
+  /// Updates the frame throttle interval live, so an FPS mode change takes
+  /// effect without re-initializing the camera stream.
+  void setTargetFps(int targetFps) {
+    _frameInterval = Duration(milliseconds: (1000 / targetFps).round());
+  }
+
   void _onFrame(CameraImage image) {
     if (_throttle.elapsed < _frameInterval) return;
     _throttle.reset();
