@@ -98,13 +98,13 @@ lib/
 - `InspectionSettings` — `confidenceThreshold`, `fpsMode` (performance toggle).
 
 ### Repository Contracts
-- `ObjectDetectionRepository` — detect objects from an input image/frame.
+- `ObjectDetectionRepository` — detect objects from an input image/frame; live `setConfidenceThreshold`.
 - `InventoryRepository` — CRUD + reactive watch on items, search/filter, JSON export/import.
+- `SettingsRepository` — load/save `InspectionSettings`.
 
-### Use Cases
-- Scanner: `DetectObjects`, throttle/frame pipeline config.
-- Inspection: `CreateInspectionItem`, `UpdateInspectionItem`, `DeleteInspectionItem`, `CropThumbnail`.
-- Inventory: `WatchInventoryItems`, `SearchInventoryItems`, `ExportInventory`, `ImportInventory`.
+### Use Cases (as actually shipped)
+- Scanner: `DetectObjects`; camera datasource throttles frames to the active `FpsMode`.
+- Inventory (owns item persistence; no separate `inspection/` feature): `SaveInspectionItem`, `DeleteInspectionItem`, `WatchInventoryItems`, `SearchInventoryItems`, `ExportInventory`, `ImportInventory`.
 - Settings: `LoadSettings`, `SaveSettings`.
 
 ---
@@ -185,9 +185,11 @@ lib/
 - **Verified:** 82/82 tests pass (hive settings repo, settings controller, settings screen widget, mlkit `setConfidenceThreshold`, widget_test now injects a fake settings repo since Hive I/O doesn't complete under `testWidgets` FakeAsync); `flutter analyze` clean; debug APK builds.
 
 ### Phase 6 — Polish, Tests & Docs
-- Widget tests, integration sanity checks.
-- Final README + keep `PLAN.md` status accurate.
-- **Exit criteria:** ship-ready Android/iOS build.
+- Platform polish: `android:label` → "PocketSight" + explicit `CAMERA` permission; iOS `CFBundleDisplayName`/`CFBundleName` → "PocketSight" + `NSCameraUsageDescription`.
+- `integration_test/app_test.dart` (SDK `integration_test` dep): on-device boot + tab-navigation sanity check, device-state independent (fixed pumps — a live camera preview makes `pumpAndSettle` spin).
+- Final README rewritten from boilerplate → project guide (stack, architecture, setup, testing, roadmap).
+- `PLAN.md` use-cases section corrected to match the shipped feature set (inventory owns item persistence; no standalone `inspection/` feature) and completion log closed out.
+- **Verified:** `flutter analyze` clean (0 issues); 82/82 unit/widget tests pass; `flutter test integration_test` scaffolded (runnable on a device); debug APK builds.
 
 ---
 
@@ -204,7 +206,7 @@ lib/
 | 0 | Scaffold & Foundation | ✅ Done | 2026-08-02 |
 | 1 | Domain Layer | ✅ Done | 2026-08-02 |
 | 2 | Scanner (Camera + ML) | ✅ Done | 2026-08-02 |
-| 3 | Tap-to-Inspect & Tagging | ⬜ Pending | — |
-| 4 | Inventory | ⬜ Pending | — |
-| 5 | Settings | ⬜ Pending | — |
-| 6 | Polish, Tests & Docs | ⬜ Pending | — |
+| 3 | Tap-to-Inspect & Tagging | ✅ Done | 2026-08-02 |
+| 4 | Inventory | ✅ Done | 2026-08-02 |
+| 5 | Settings | ✅ Done | 2026-08-02 |
+| 6 | Polish, Tests & Docs | ✅ Done | 2026-08-03 |
