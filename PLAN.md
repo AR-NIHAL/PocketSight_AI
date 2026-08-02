@@ -119,10 +119,16 @@ lib/
 - **Exit criteria:** `flutter analyze` clean; app builds & navigates between placeholder screens.
 - **Verified:** analyze 0 issues, 2/2 widget tests pass, `flutter build apk --debug` succeeds.
 
-### Phase 1 — Domain Layer (pure Dart)
+### Phase 1 — Domain Layer (pure Dart) ✅
 - Freezed entities, repository contracts, use cases in `domain/` (zero Flutter imports).
 - Unit tests for use cases & entity immutability.
 - **Exit criteria:** `flutter test` green; domain layer verified pure Dart.
+- **Delivered:**
+  - `scanner/domain`: `DetectedObject`, `NormalizedRect` (validated unit rect), `DetectionImage` + `DetectionImageFormat` (pure-Dart frame abstraction), `ObjectDetectionRepository`, `DetectObjects`.
+  - `inventory/domain`: `InspectionItem`, `InspectionSchedule` (JSON round-trip), `InventoryRepository` (watch/save/delete/search/export/import), use cases.
+  - `settings/domain`: `InspectionSettings` + `FpsMode` (10/12/15 FPS), `SettingsRepository`, `LoadSettings`/`SaveSettings` (default fallback).
+  - **Note:** item persistence use cases live in `inventory/domain` (single owner); `inspection/` UI orchestration and thumbnail cropping land in Phase 3 (cropping needs the `image` package, so it stays out of the pure-Dart domain).
+- **Verified:** 32/32 tests pass; purity scan shows no Flutter/Riverpod/platform imports in `domain/`; `flutter analyze` clean.
 
 ### Phase 2 — Scanner (Camera + ML Pipeline)
 - `camera` datasource (`startImageStream`), frame throttling to **10–15 FPS**.
@@ -169,7 +175,7 @@ lib/
 | Phase | Description | Status | Date |
 |---|---|---|---|
 | 0 | Scaffold & Foundation | ✅ Done | 2026-08-02 |
-| 1 | Domain Layer | ⬜ Pending | — |
+| 1 | Domain Layer | ✅ Done | 2026-08-02 |
 | 2 | Scanner (Camera + ML) | ⬜ Pending | — |
 | 3 | Tap-to-Inspect & Tagging | ⬜ Pending | — |
 | 4 | Inventory | ⬜ Pending | — |
