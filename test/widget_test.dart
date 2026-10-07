@@ -1,90 +1,69 @@
-import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive_ce/hive_ce.dart';
+import 'package:pocketsite_ai/core/presentation/app_shell.dart';
+import 'package:pocketsite_ai/features/tickets/presentation/providers/ticket_providers.dart';
+import 'package:pocketsite_ai/features/tickets/presentation/screens/new_ticket_screen.dart';
+import 'package:pocketsite_ai/main.dart';
 
-import 'package:pocketsite_ai/core/app.dart';
-import 'package:pocketsite_ai/features/settings/data/providers.dart';
-import 'package:pocketsite_ai/features/settings/domain/entities/inspection_settings.dart';
-import 'package:pocketsite_ai/features/settings/domain/repositories/settings_repository.dart';
-
-const _cameraChannel = MethodChannel('plugins.flutter.io/camera');
-
-/// In-memory settings store. Hive's disk I/O never completes under
-/// `testWidgets` FakeAsync, so the app-level tests inject a fake to keep the
-/// Settings tab from spinning forever.
-class _FakeSettingsRepository implements SettingsRepository {
-  InspectionSettings? stored;
-
-  @override
-  Future<InspectionSettings?> load() async => stored;
-
-  @override
-  Future<void> save(InspectionSettings settings) async {
-    stored = settings;
-  }
-}
+import 'helpers/in_memory_ticket_repository.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets('App boots and renders Repair Intake dashboard matching Screen 01',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
 
-  late Directory tempDir;
+    final repo = InMemoryTicketRepository();
 
-  setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('pocketsight_widget_test');
-    Hive.init(tempDir.path);
-
-    // No camera exists in the test environment: make `availableCameras()`
-    // resolve immediately (empty list) so the scanner fails fast into its
-    // error state instead of waiting forever on a real platform channel.
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_cameraChannel, (call) async {
-          if (call.method == 'availableCameras') return <dynamic>[];
-          return null;
-        });
-  });
-
-  tearDown(() async {
-    await Hive.close();
-    await tempDir.delete(recursive: true);
-  });
-
-  Widget app() => ProviderScope(
+    await tester.pumpWidget(
+      ProviderScope(
         overrides: [
-          settingsRepositoryProvider
-              .overrideWithValue(_FakeSettingsRepository()),
+          ticketRepositoryProvider.overrideWithValue(repo),
         ],
-        child: const PocketSightApp(),
-      );
-
-  testWidgets('app boots and shows the scanner shell', (tester) async {
-    await tester.pumpWidget(app());
+        child: const RepairIntakeApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('Scan'), findsOneWidget);
-    expect(find.text('Inventory'), findsOneWidget);
+    expect(find.byType(AppShell), findsOneWidget);
+
+    // Verify 3 bottom navigation destinations
+    expect(find.text('Tickets'), findsOneWidget);
+    expect(find.text('Devices'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
 
-    expect(find.text('Camera unavailable'), findsOneWidget);
-  });
+    // Verify app bar title and subtitle from Screen 01
+    expect(find.text('Repair Intake'), findsOneWidget);
+    expect(find.text('Workshop tickets'), findsOneWidget);
 
-  testWidgets('bottom navigation switches between tabs', (tester) async {
-    await tester.pumpWidget(app());
+    // Verify search hint text
+    expect(find.text('Search ticket, customer or serial'), findsOneWidget);
+
+    // Verify filter chips
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Received'), findsOneWidget);
+    expect(find.text('In progress'), findsOneWidget);
+    expect(find.text('Ready'), findsOneWidget);
+
+    // Verify "+ New repair" button is present
+    expect(find.text('+ New repair'), findsOneWidget);
+
+    // Tap "+ New repair" and verify navigation to NewTicketScreen
+    await tester.tap(find.text('+ New repair'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Inventory'));
-    await tester.pumpAndSettle();
-    expect(find.text('No items yet'), findsOneWidget);
-
-    await tester.tap(find.text('Settings'));
-    await tester.pumpAndSettle();
-    expect(find.text('Confidence threshold'), findsOneWidget);
-
-    await tester.tap(find.text('Scan'));
-    await tester.pumpAndSettle();
-    expect(find.text('Scan'), findsOneWidget);
+    expect(find.byType(NewTicketScreen), findsOneWidget);
+    expect(find.text('New repair'), findsOneWidget);
+    expect(find.text('Customer name'), findsOneWidget);
+    expect(find.text('Scan device label'), findsOneWidget);
+    expect(find.text('No serial number'), findsOneWidget);
+    expect(find.text('Complaint'), findsOneWidget);
+    expect(find.text('Accessories'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
   });
 }
